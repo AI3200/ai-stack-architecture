@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ja">
+<!-- Chosen Palette: Warm Neutrals (Stone, Amber) with Layer-Specific Accents -->
+<!-- Application Structure Plan: The SPA is structured as an interactive 'Command Center' dashboard. Left column features a clickable, HTML-based vertical stack (replacing Mermaid) representing the top-down information flow. The right column is a dynamic detail pane that updates based on the selected layer, showing tools, roles, and strict governance rules. A Chart.js visualization provides quantitative context on the workload profile of the selected layer. This task-oriented view forces the user to understand the system layer-by-layer rather than as a monolithic toolset. -->
+<!-- Visualization & Content Choices: 
+1. Architecture Flow -> Goal: Organize/Hierarchy -> HTML/CSS Interactive Flex-Stack -> Allows direct selection without SVG. 
+2. Layer Details -> Goal: Inform -> Dynamic Text Cards -> Clear, distraction-free reading of rules. 
+3. Workload Profile -> Goal: Compare -> Chart.js Radar Chart -> Visually demonstrates how each layer balances automation, human intervention, and speed, proving the necessity of separation. 
+-->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI運用スタック相関図：階層化アーキテクチャ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+        body { font-family: 'Noto Sans JP', sans-serif; background-color: #f5f5f4; color: #292524; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
+        .layer-btn { transition: all 0.2s ease; }
+        .layer-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        .layer-active { border-left-width: 8px; font-weight: 700; transform: translateX(8px); }
+        .warehouse-btn { border-top-width: 8px; border-color: #44403c; }
+        .warehouse-active { background-color: #e7e5e4; }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto space-y-8">
+        <header class="bg-white rounded-2xl p-8 shadow-sm border border-stone-200">
+            <h1 class="text-3xl font-bold tracking-tight text-stone-800 mb-4">AI運用スタック・インタラクティブガイド</h1>
+            <p class="text-stone-600 leading-relaxed text-lg mb-4">
+                このダッシュボードは、Agent_Workspaceにおける全AIエージェントおよび人間の役割、権限、接続構造を定義する最高法典です。
+                AIツール群は単一の万能ツールとしてではなく、「思考・記憶・実行・作業・操作・確認」の階層レイヤーとして厳密に分離・統治されなければなりません。
+            </p>
+            <div class="bg-stone-50 p-4 rounded-xl border border-stone-200">
+                <p class="font-medium text-stone-700">運用コア・ルール：</p>
+                <ul class="list-disc list-inside mt-2 text-stone-600 space-y-1">
+                    <li>情報の重力：設計指示は必ず「上から下」へと流れる一方通行。</li>
+                    <li>共通基盤：すべての階層は最下層の「Google Drive」を唯一のデータ基盤として参照する。</li>
+                    <li>人間は「確認層（Eye）」に徹し、作成・実行をAIエージェントへ委譲する。</li>
+                </ul>
+            </div>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <section class="lg:col-span-5 flex flex-col space-y-4">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 flex-grow">
+                    <h2 class="text-xl font-bold text-stone-800 mb-6 border-b pb-2">アーキテクチャ・スタック</h2>
+                    <p class="text-sm text-stone-500 mb-4">レイヤーをクリックして役割と詳細プロトコルを確認してください。</p>
+                    
+                    <div class="flex flex-col space-y-3" id="stack-container">
+                    </div>
+
+                    <div class="mt-8 relative">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="h-full w-0.5 bg-stone-300"></div>
+                        </div>
+                        <div class="relative z-10 flex justify-center py-2">
+                            <span class="bg-stone-100 text-stone-500 text-xs px-2 py-1 rounded-full border border-stone-300">全レイヤー接続</span>
+                        </div>
+                    </div>
+
+                    <button id="btn-warehouse" class="w-full mt-2 bg-stone-100 border-t-8 border-stone-700 p-4 rounded-xl text-left layer-btn flex justify-between items-center" onclick="selectLayer('warehouse')">
+                        <div>
+                            <span class="text-xs font-bold text-stone-500 block mb-1">Infrastructure</span>
+                            <span class="text-lg font-bold text-stone-800 block">データ基盤：Warehouse</span>
+                        </div>
+                        <span class="text-2xl">🗄️</span>
+                    </button>
+                </div>
+            </section>
+
+            <section class="lg:col-span-7 flex flex-col space-y-8">
+                <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-stone-200 min-h-[400px]">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 id="detail-title" class="text-2xl font-bold text-stone-800">レイヤー詳細</h2>
+                        <span id="detail-badge" class="px-3 py-1 rounded-full text-sm font-medium bg-stone-100 text-stone-600">選択してください</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-stone-50 p-4 rounded-xl border border-stone-100">
+                            <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">割り当てツール</h3>
+                            <div id="detail-tools" class="text-stone-800 font-medium text-lg leading-snug">
+                                左側のスタックを選択
+                            </div>
+                        </div>
+                        <div class="bg-stone-50 p-4 rounded-xl border border-stone-100">
+                            <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">主要な役割</h3>
+                            <div id="detail-role" class="text-stone-700 text-sm">
+                                概要がここに表示されます。
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold text-stone-800 mb-3 border-b pb-2 border-stone-100">運用プロトコル・禁止事項</h3>
+                        <ul id="detail-rules" class="space-y-2 text-stone-600 text-sm">
+                            <li>システムを理解するためにレイヤーを選択してください。</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-bold text-stone-800 mb-4 text-center">レイヤー別 業務特性プロファイル</h3>
+                        <p class="text-xs text-stone-500 text-center mb-4">このチャートは、選択されたレイヤーにおける自動化、速度、コンテキスト把握、創造性のバランスを示しています。</p>
+                        <div class="chart-container">
+                            <canvas id="layerChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const layersData = {
+            brain: {
+                id: 'brain',
+                title: '思考レイヤー：Brain',
+                badge: 'Layer 1',
+                color: 'blue',
+                icon: '🧠',
+                tools: 'ChatGPT (o1/o3)<br>Gemini 2.0 Pro',
+                role: '戦略立案、高度な論理推論、仕様策定。プロジェクトの方向性とシステム全体の設計図を描く最高意思決定機関。',
+                rules: [
+                    'ファイルシステムへの直接アクセス（読み書き）を固く禁ずる。コンテキストの汚染を防ぐため。',
+                    '具体的なコードやファイルの出力ではなく、設計図や指示書のみを出力すること。',
+                    '生成された設計図は、直ちに下層の Memory/Hand レイヤーへと引き継がれる。'
+                ],
+                chartData: [20, 100, 90, 40] 
+            },
+            memory: {
+                id: 'memory',
+                title: '構造レイヤー：Memory',
+                badge: 'Layer 2',
+                color: 'orange',
+                icon: '📂',
+                tools: 'Windsurf (Cascade)',
+                role: 'ディレクトリ構造の維持、全体コードベースの把握、RAG管理。プロジェクト全体の「形」と文脈を保持する。',
+                rules: [
+                    'UI操作、ブラウザ操作等の物理的・視覚的操作を一切禁ずる。',
+                    '各実行ツールがバラバラに動いた場合でも、このレイヤーが構造の整合性に単独で責任を持つ。',
+                    '常にGoogle Drive上の AGENT_CONTEXT.md と同期を図ること。'
+                ],
+                chartData: [80, 70, 40, 60] 
+            },
+            hand: {
+                id: 'hand',
+                title: '実行レイヤー：Hand/CLI',
+                badge: 'Layer 3',
+                color: 'green',
+                icon: '⚡',
+                tools: 'Claude Code<br>Codex<br>Gemini CLI',
+                role: 'ファイル生成、リファクタリング、ビルド、テスト実行。UIを持たないターミナル環境で高速かつ大量の実務をこなす。',
+                rules: [
+                    'UI操作を伴うタスクの実行を禁ずる。効率の低下を招くため。',
+                    '自律的に仕様を変更・策定することを禁ずる。必ず Brain/Memory 層の指示に従うこと。',
+                    '作業中のファイルは必ず .working 拡張子等を用いて排他制御を行うこと。'
+                ],
+                chartData: [100, 30, 20, 90] 
+            },
+            worker: {
+                id: 'worker',
+                title: 'ローカル処理レイヤー：Worker',
+                badge: 'Layer 4',
+                color: 'purple',
+                icon: '⚙️',
+                tools: 'Open Interpreter<br>Python',
+                role: 'データ変換、バッチ処理、OSレベルの自動化、スクレイピング。ローカル環境に密結合した物理的・単発的処理。',
+                rules: [
+                    'プロジェクト全体の構造変更や設計判断を行うことを禁ずる。',
+                    '単発のタスク処理に特化し、処理完了後は速やかに終了すること。',
+                    '生成された素材データは、確実に Warehouse の適切なディレクトリへ格納すること。'
+                ],
+                chartData: [90, 10, 10, 100] 
+            },
+            operator: {
+                id: 'operator',
+                title: '操作レイヤー：UI Operator',
+                badge: 'Layer 5 (Optional)',
+                color: 'amber',
+                icon: '🖱️',
+                tools: 'Claude Cowork<br><span class="text-xs font-normal text-stone-500">(Computer Use)</span>',
+                role: 'ブラウザ操作、Finder操作、Adobeアプリ操作等。APIが存在しないレガシー環境やUI領域のブリッジ作業。',
+                rules: [
+                    '本レイヤーは「任意（Optional）」であり、常駐させてはならない。',
+                    'コードの生成や論理構造の設計を行ってはならない。純粋な「操作」に徹すること。',
+                    '極めて低速であるため、CLIレイヤーで代替可能な作業をこちらに回してはならない。'
+                ],
+                chartData: [40, 20, 30, 20] 
+            },
+            eye: {
+                id: 'eye',
+                title: '人間確認レイヤー：Eye',
+                badge: 'Layer 6',
+                color: 'pink',
+                icon: '👁️',
+                tools: 'Photoshop, Illustrator, InDesign<br>Visual Studio Code',
+                role: '最終品質の決定、感性的評価、法的・倫理的判断、微調整。人間（ディレクター）が目視で最終確認を行う聖域。',
+                rules: [
+                    'AIによる自動化領域ではない。AIはここまで成果物を持ち上げ、人間が最終判断を下す。',
+                    'ゼロからの素材作成や構造設計をここで行ってはならない。それはAIの仕事である。',
+                    '承認されたファイルのみが final フォルダへと移行される。'
+                ],
+                chartData: [0, 100, 100, 50] 
+            },
+            warehouse: {
+                id: 'warehouse',
+                title: 'データ基盤：Warehouse',
+                badge: 'Infrastructure',
+                color: 'stone',
+                icon: '🗄️',
+                tools: 'Google Drive<br><span class="text-xs font-normal text-stone-500">(Agent_Workspace)</span>',
+                role: '全データの共通基盤、同期レイヤー、履歴管理。全エージェントと人間が共有する「唯一の真実（Single Source of Truth）」。',
+                rules: [
+                    'Agent_Workspace 直下のみを使用し、共有ドライブや他階層へデータを分散させないこと。',
+                    'AGENT_CONTEXT.md を常に最新に保ち、全レイヤーの共通認識ボードとして機能させること。',
+                    'ファイルの削除を禁ずる。不要なものは archive フォルダへ移動すること。'
+                ],
+                chartData: [100, 100, 100, 100] 
+            }
+        };
+
+        const stackOrder = ['brain', 'memory', 'hand', 'worker', 'operator', 'eye'];
+        const stackContainer = document.getElementById('stack-container');
+        
+        let chartInstance = null;
+
+        function initApp() {
+            stackOrder.forEach(layerId => {
+                const layer = layersData[layerId];
+                const btn = document.createElement('button');
+                btn.id = `btn-${layerId}`;
+                btn.className = `w-full bg-white border-l-4 border-${layer.color}-300 p-4 rounded-xl text-left layer-btn flex justify-between items-center shadow-sm`;
+                if(layerId === 'operator') {
+                    btn.classList.add('border-dashed', 'bg-amber-50/50');
+                }
+                
+                btn.innerHTML = `
+                    <div>
+                        <span class="text-xs font-bold text-${layer.color}-500 block mb-1">${layer.badge}</span>
+                        <span class="text-lg font-bold text-stone-800 block">${layer.title}</span>
+                    </div>
+                    <span class="text-2xl opacity-80">${layer.icon}</span>
+                `;
+                btn.onclick = () => selectLayer(layerId);
+                stackContainer.appendChild(btn);
+            });
+
+            initChart();
+            selectLayer('brain');
+        }
+
+        function selectLayer(layerId) {
+            document.querySelectorAll('.layer-btn').forEach(btn => {
+                btn.classList.remove('layer-active', 'warehouse-active', 'border-blue-500', 'border-orange-500', 'border-green-500', 'border-purple-500', 'border-amber-500', 'border-pink-500', 'border-stone-700');
+                
+                const originalColor = layersData[btn.id.replace('btn-', '')].color;
+                if(btn.id !== 'btn-warehouse') {
+                    btn.classList.add(`border-${originalColor}-300`);
+                }
+            });
+
+            const btn = document.getElementById(`btn-${layerId}`);
+            if (layerId === 'warehouse') {
+                btn.classList.add('warehouse-active');
+            } else {
+                const color = layersData[layerId].color;
+                btn.classList.remove(`border-${color}-300`);
+                btn.classList.add('layer-active', `border-${color}-500`, `bg-${color}-50`);
+            }
+
+            const data = layersData[layerId];
+            
+            document.getElementById('detail-title').textContent = data.title;
+            
+            const badge = document.getElementById('detail-badge');
+            badge.textContent = data.badge;
+            badge.className = `px-3 py-1 rounded-full text-sm font-bold bg-${data.color}-100 text-${data.color}-700`;
+            if(data.color === 'stone') badge.className = `px-3 py-1 rounded-full text-sm font-bold bg-stone-200 text-stone-800`;
+
+            document.getElementById('detail-tools').innerHTML = data.tools;
+            document.getElementById('detail-role').innerHTML = data.role;
+            
+            const rulesContainer = document.getElementById('detail-rules');
+            rulesContainer.innerHTML = '';
+            data.rules.forEach(rule => {
+                const li = document.createElement('li');
+                li.className = 'flex items-start';
+                li.innerHTML = `<span class="text-${data.color}-500 mr-2 font-bold">・</span><span>${rule}</span>`;
+                if(data.color === 'stone') li.innerHTML = `<span class="text-stone-700 mr-2 font-bold">・</span><span>${rule}</span>`;
+                rulesContainer.appendChild(li);
+            });
+
+            updateChart(data.chartData, data.color);
+        }
+
+        const colorMap = {
+            'blue': 'rgba(59, 130, 246, 0.6)',
+            'orange': 'rgba(249, 115, 22, 0.6)',
+            'green': 'rgba(34, 197, 94, 0.6)',
+            'purple': 'rgba(168, 85, 247, 0.6)',
+            'amber': 'rgba(245, 158, 11, 0.6)',
+            'pink': 'rgba(236, 72, 153, 0.6)',
+            'stone': 'rgba(120, 113, 108, 0.6)'
+        };
+
+        const borderMap = {
+            'blue': 'rgb(59, 130, 246)',
+            'orange': 'rgb(249, 115, 22)',
+            'green': 'rgb(34, 197, 94)',
+            'purple': 'rgb(168, 85, 247)',
+            'amber': 'rgb(245, 158, 11)',
+            'pink': 'rgb(236, 72, 153)',
+            'stone': 'rgb(120, 113, 108)'
+        };
+
+        function initChart() {
+            const ctx = document.getElementById('layerChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['自動化・自律性', '抽象的思考・創造性', '人間的文脈の理解', '処理速度・反復性'],
+                    datasets: [{
+                        label: '能力プロファイル',
+                        data: [0, 0, 0, 0],
+                        backgroundColor: 'rgba(120, 113, 108, 0.2)',
+                        borderColor: 'rgb(120, 113, 108)',
+                        pointBackgroundColor: 'rgb(120, 113, 108)',
+                        borderWidth: 2,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(0,0,0,0.05)' },
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            pointLabels: {
+                                font: { family: "'Noto Sans JP', sans-serif", size: 11, weight: 'bold' },
+                                color: '#57534e'
+                            },
+                            ticks: { display: false, min: 0, max: 100 }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(28, 25, 23, 0.9)',
+                            titleFont: { family: "'Noto Sans JP', sans-serif", size: 13 },
+                            bodyFont: { family: "'Noto Sans JP', sans-serif", size: 12 },
+                            padding: 10,
+                            cornerRadius: 8
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart(dataArray, colorKey) {
+            if (!chartInstance) return;
+            chartInstance.data.datasets[0].data = dataArray;
+            chartInstance.data.datasets[0].backgroundColor = colorMap[colorKey] || colorMap['stone'];
+            chartInstance.data.datasets[0].borderColor = borderMap[colorKey] || borderMap['stone'];
+            chartInstance.data.datasets[0].pointBackgroundColor = borderMap[colorKey] || borderMap['stone'];
+            chartInstance.update();
+        }
+
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
