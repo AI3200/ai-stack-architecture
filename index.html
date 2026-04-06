@@ -1,375 +1,416 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- Chosen Palette: Warm Neutrals (Stone, Amber) with Layer-Specific Accents -->
-<!-- Application Structure Plan: The SPA is structured as an interactive 'Command Center' dashboard. Left column features a clickable, HTML-based vertical stack (replacing Mermaid) representing the top-down information flow. The right column is a dynamic detail pane that updates based on the selected layer, showing tools, roles, and strict governance rules. A Chart.js visualization provides quantitative context on the workload profile of the selected layer. This task-oriented view forces the user to understand the system layer-by-layer rather than as a monolithic toolset. -->
-<!-- Visualization & Content Choices: 
-1. Architecture Flow -> Goal: Organize/Hierarchy -> HTML/CSS Interactive Flex-Stack -> Allows direct selection without SVG. 
-2. Layer Details -> Goal: Inform -> Dynamic Text Cards -> Clear, distraction-free reading of rules. 
-3. Workload Profile -> Goal: Compare -> Chart.js Radar Chart -> Visually demonstrates how each layer balances automation, human intervention, and speed, proving the necessity of separation. 
--->
-<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI運用スタック相関図：階層化アーキテクチャ</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
-        body { font-family: 'Noto Sans JP', sans-serif; background-color: #f5f5f4; color: #292524; }
-        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
-        .layer-btn { transition: all 0.2s ease; }
-        .layer-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-        .layer-active { border-left-width: 8px; font-weight: 700; transform: translateX(8px); }
-        .warehouse-btn { border-top-width: 8px; border-color: #44403c; }
-        .warehouse-active { background-color: #e7e5e4; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI運用スタック相関図 (Architecture Map v3.5)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+    body {
+        font-family: 'Noto Sans JP', sans-serif;
+        background-color: #F1F5F9;
+        color: #1E293B;
+    }
+    .chart-container {
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        height: 280px;
+        max-height: 300px;
+    }
+    .optional-layer {
+        border-style: dashed !important;
+        background-color: rgba(248, 250, 252, 0.5);
+    }
+    .connector-line {
+        width: 2px;
+        background-color: #CBD5E1;
+        height: 24px;
+        margin: 0 auto;
+    }
+    .data-text {
+        font-size: 10.5px;
+        line-height: 1.5;
+    }
+    .label-tag {
+        font-weight: 900;
+        color: #64748B;
+        margin-right: 4px;
+        display: inline-block;
+        width: 32px;
+    }
+    .action-btn {
+        transition: all 0.18s ease;
+    }
+    .action-btn:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.04);
+    }
+    .action-btn:active {
+        transform: translateY(0);
+    }
+</style>
 </head>
-<body class="min-h-screen p-4 md:p-8">
+<body class="p-4 md:p-8">
 
-    <div class="max-w-6xl mx-auto space-y-8">
-        <header class="bg-white rounded-2xl p-8 shadow-sm border border-stone-200">
-            <h1 class="text-3xl font-bold tracking-tight text-stone-800 mb-4">AI運用スタック・インタラクティブガイド</h1>
-            <p class="text-stone-600 leading-relaxed text-lg mb-4">
-                このダッシュボードは、Agent_Workspaceにおける全AIエージェントおよび人間の役割、権限、接続構造を定義する最高法典です。
-                AIツール群は単一の万能ツールとしてではなく、「思考・記憶・実行・作業・操作・確認」の階層レイヤーとして厳密に分離・統治されなければなりません。
-            </p>
-            <div class="bg-stone-50 p-4 rounded-xl border border-stone-200">
-                <p class="font-medium text-stone-700">運用コア・ルール：</p>
-                <ul class="list-disc list-inside mt-2 text-stone-600 space-y-1">
-                    <li>情報の重力：設計指示は必ず「上から下」へと流れる一方通行。</li>
-                    <li>共通基盤：すべての階層は最下層の「Google Drive」を唯一のデータ基盤として参照する。</li>
-                    <li>人間は「確認層（Eye）」に徹し、作成・実行をAIエージェントへ委譲する。</li>
-                </ul>
+<div class="max-w-6xl mx-auto bg-white shadow-2xl rounded-sm border border-slate-200 overflow-hidden">
+    
+    <header class="bg-slate-900 p-8 text-white border-b-4 border-blue-600">
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+            <div class="min-w-0">
+                <h1 class="text-3xl font-black mb-2 tracking-tight">AI運用スタック相関図</h1>
+                <p class="text-slate-400 text-sm font-bold tracking-tight">
+                    いつ、何を、何の目的で使い、どのような結果を得るか。さらに Google Drive Desktop による同期基盤まで含めて把握する全工程マップ
+                </p>
             </div>
-        </header>
+            <div class="flex-shrink-0">
+                <button
+                    id="startProjectBtn"
+                    onclick="startProject()"
+                    class="action-btn inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-sm font-black text-sm shadow-lg whitespace-nowrap"
+                >
+                    <span>▶</span>
+                    <span>新規プロジェクト開始</span>
+                </button>
+            </div>
+        </div>
+    </header>
 
-        <main class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <section class="lg:col-span-5 flex flex-col space-y-4">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 flex-grow">
-                    <h2 class="text-xl font-bold text-stone-800 mb-6 border-b pb-2">アーキテクチャ・スタック</h2>
-                    <p class="text-sm text-stone-500 mb-4">レイヤーをクリックして役割と詳細プロトコルを確認してください。</p>
-                    
-                    <div class="flex flex-col space-y-3" id="stack-container">
-                    </div>
-
-                    <div class="mt-8 relative">
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <div class="h-full w-0.5 bg-stone-300"></div>
-                        </div>
-                        <div class="relative z-10 flex justify-center py-2">
-                            <span class="bg-stone-100 text-stone-500 text-xs px-2 py-1 rounded-full border border-stone-300">全レイヤー接続</span>
-                        </div>
-                    </div>
-
-                    <button id="btn-warehouse" class="w-full mt-2 bg-stone-100 border-t-8 border-stone-700 p-4 rounded-xl text-left layer-btn flex justify-between items-center" onclick="selectLayer('warehouse')">
-                        <div>
-                            <span class="text-xs font-bold text-stone-500 block mb-1">Infrastructure</span>
-                            <span class="text-lg font-bold text-stone-800 block">データ基盤：Warehouse</span>
-                        </div>
-                        <span class="text-2xl">🗄️</span>
-                    </button>
-                </div>
-            </section>
-
-            <section class="lg:col-span-7 flex flex-col space-y-8">
-                <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-stone-200 min-h-[400px]">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 id="detail-title" class="text-2xl font-bold text-stone-800">レイヤー詳細</h2>
-                        <span id="detail-badge" class="px-3 py-1 rounded-full text-sm font-medium bg-stone-100 text-stone-600">選択してください</span>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        <div class="bg-stone-50 p-4 rounded-xl border border-stone-100">
-                            <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">割り当てツール</h3>
-                            <div id="detail-tools" class="text-stone-800 font-medium text-lg leading-snug">
-                                左側のスタックを選択
-                            </div>
-                        </div>
-                        <div class="bg-stone-50 p-4 rounded-xl border border-stone-100">
-                            <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">主要な役割</h3>
-                            <div id="detail-role" class="text-stone-700 text-sm">
-                                概要がここに表示されます。
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-8">
-                        <h3 class="text-lg font-bold text-stone-800 mb-3 border-b pb-2 border-stone-100">運用プロトコル・禁止事項</h3>
-                        <ul id="detail-rules" class="space-y-2 text-stone-600 text-sm">
-                            <li>システムを理解するためにレイヤーを選択してください。</li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h3 class="text-lg font-bold text-stone-800 mb-4 text-center">レイヤー別 業務特性プロファイル</h3>
-                        <p class="text-xs text-stone-500 text-center mb-4">このチャートは、選択されたレイヤーにおける自動化、速度、コンテキスト把握、創造性のバランスを示しています。</p>
-                        <div class="chart-container">
-                            <canvas id="layerChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
+    <div class="bg-indigo-600 p-3 text-center">
+        <p class="text-white text-xs font-black tracking-wider uppercase">
+            前提：Google Drive Desktop を各端末に導入し、同期された Agent_Workspace を全レイヤー共通の作業基盤として運用する
+        </p>
     </div>
 
-    <script>
-        const layersData = {
-            brain: {
-                id: 'brain',
-                title: '思考レイヤー：Brain',
-                badge: 'Layer 1',
-                color: 'blue',
-                icon: '🧠',
-                tools: 'ChatGPT (o1/o3)<br>Gemini 2.0 Pro',
-                role: '戦略立案、高度な論理推論、仕様策定。プロジェクトの方向性とシステム全体の設計図を描く最高意思決定機関。',
-                rules: [
-                    'ファイルシステムへの直接アクセス（読み書き）を固く禁ずる。コンテキストの汚染を防ぐため。',
-                    '具体的なコードやファイルの出力ではなく、設計図や指示書のみを出力すること。',
-                    '生成された設計図は、直ちに下層の Memory/Hand レイヤーへと引き継がれる。'
-                ],
-                chartData: [20, 100, 90, 40] 
-            },
-            memory: {
-                id: 'memory',
-                title: '構造レイヤー：Memory',
-                badge: 'Layer 2',
-                color: 'orange',
-                icon: '📂',
-                tools: 'Windsurf (Cascade)',
-                role: 'ディレクトリ構造の維持、全体コードベースの把握、RAG管理。プロジェクト全体の「形」と文脈を保持する。',
-                rules: [
-                    'UI操作、ブラウザ操作等の物理的・視覚的操作を一切禁ずる。',
-                    '各実行ツールがバラバラに動いた場合でも、このレイヤーが構造の整合性に単独で責任を持つ。',
-                    '常にGoogle Drive上の AGENT_CONTEXT.md と同期を図ること。'
-                ],
-                chartData: [80, 70, 40, 60] 
-            },
-            hand: {
-                id: 'hand',
-                title: '実行レイヤー：Hand/CLI',
-                badge: 'Layer 3',
-                color: 'green',
-                icon: '⚡',
-                tools: 'Claude Code<br>Codex<br>Gemini CLI',
-                role: 'ファイル生成、リファクタリング、ビルド、テスト実行。UIを持たないターミナル環境で高速かつ大量の実務をこなす。',
-                rules: [
-                    'UI操作を伴うタスクの実行を禁ずる。効率の低下を招くため。',
-                    '自律的に仕様を変更・策定することを禁ずる。必ず Brain/Memory 層の指示に従うこと。',
-                    '作業中のファイルは必ず .working 拡張子等を用いて排他制御を行うこと。'
-                ],
-                chartData: [100, 30, 20, 90] 
-            },
-            worker: {
-                id: 'worker',
-                title: 'ローカル処理レイヤー：Worker',
-                badge: 'Layer 4',
-                color: 'purple',
-                icon: '⚙️',
-                tools: 'Open Interpreter<br>Python',
-                role: 'データ変換、バッチ処理、OSレベルの自動化、スクレイピング。ローカル環境に密結合した物理的・単発的処理。',
-                rules: [
-                    'プロジェクト全体の構造変更や設計判断を行うことを禁ずる。',
-                    '単発のタスク処理に特化し、処理完了後は速やかに終了すること。',
-                    '生成された素材データは、確実に Warehouse の適切なディレクトリへ格納すること。'
-                ],
-                chartData: [90, 10, 10, 100] 
-            },
-            operator: {
-                id: 'operator',
-                title: '操作レイヤー：UI Operator',
-                badge: 'Layer 5 (Optional)',
-                color: 'amber',
-                icon: '🖱️',
-                tools: 'Claude Cowork<br><span class="text-xs font-normal text-stone-500">(Computer Use)</span>',
-                role: 'ブラウザ操作、Finder操作、Adobeアプリ操作等。APIが存在しないレガシー環境やUI領域のブリッジ作業。',
-                rules: [
-                    '本レイヤーは「任意（Optional）」であり、常駐させてはならない。',
-                    'コードの生成や論理構造の設計を行ってはならない。純粋な「操作」に徹すること。',
-                    '極めて低速であるため、CLIレイヤーで代替可能な作業をこちらに回してはならない。'
-                ],
-                chartData: [40, 20, 30, 20] 
-            },
-            eye: {
-                id: 'eye',
-                title: '人間確認レイヤー：Eye',
-                badge: 'Layer 6',
-                color: 'pink',
-                icon: '👁️',
-                tools: 'Photoshop, Illustrator, InDesign<br>Visual Studio Code',
-                role: '最終品質の決定、感性的評価、法的・倫理的判断、微調整。人間（ディレクター）が目視で最終確認を行う聖域。',
-                rules: [
-                    'AIによる自動化領域ではない。AIはここまで成果物を持ち上げ、人間が最終判断を下す。',
-                    'ゼロからの素材作成や構造設計をここで行ってはならない。それはAIの仕事である。',
-                    '承認されたファイルのみが final フォルダへと移行される。'
-                ],
-                chartData: [0, 100, 100, 50] 
-            },
-            warehouse: {
-                id: 'warehouse',
-                title: 'データ基盤：Warehouse',
-                badge: 'Infrastructure',
-                color: 'stone',
-                icon: '🗄️',
-                tools: 'Google Drive<br><span class="text-xs font-normal text-stone-500">(Agent_Workspace)</span>',
-                role: '全データの共通基盤、同期レイヤー、履歴管理。全エージェントと人間が共有する「唯一の真実（Single Source of Truth）」。',
-                rules: [
-                    'Agent_Workspace 直下のみを使用し、共有ドライブや他階層へデータを分散させないこと。',
-                    'AGENT_CONTEXT.md を常に最新に保ち、全レイヤーの共通認識ボードとして機能させること。',
-                    'ファイルの削除を禁ずる。不要なものは archive フォルダへ移動すること。'
-                ],
-                chartData: [100, 100, 100, 100] 
-            }
-        };
+    <div id="projectStatusBar" class="hidden bg-indigo-50 border-b border-indigo-200 px-6 py-4">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div class="text-sm text-indigo-900 font-bold">
+                新規プロジェクト開始シーケンスを起動
+            </div>
+            <div class="text-xs text-indigo-700 font-medium">
+                Agent_Workspace を起点に、初期構造の作成フローを確認
+            </div>
+        </div>
+        <div id="projectStatusLog" class="mt-3 text-xs text-indigo-800 space-y-1 font-mono"></div>
+    </div>
 
-        const stackOrder = ['brain', 'memory', 'hand', 'worker', 'operator', 'eye'];
-        const stackContainer = document.getElementById('stack-container');
+    <div class="p-8 space-y-4">
         
-        let chartInstance = null;
+        <div class="grid grid-cols-1 gap-2">
 
-        function initApp() {
-            stackOrder.forEach(layerId => {
-                const layer = layersData[layerId];
-                const btn = document.createElement('button');
-                btn.id = `btn-${layerId}`;
-                btn.className = `w-full bg-white border-l-4 border-${layer.color}-300 p-4 rounded-xl text-left layer-btn flex justify-between items-center shadow-sm`;
-                if(layerId === 'operator') {
-                    btn.classList.add('border-dashed', 'bg-amber-50/50');
-                }
-                
-                btn.innerHTML = `
-                    <div>
-                        <span class="text-xs font-bold text-${layer.color}-500 block mb-1">${layer.badge}</span>
-                        <span class="text-lg font-bold text-stone-800 block">${layer.title}</span>
+            <div class="bg-blue-50 border border-blue-200 p-4 rounded-sm">
+                <div class="flex flex-col md:flex-row justify-between items-start gap-6">
+                    <div class="w-64 flex-shrink-0">
+                        <h3 class="font-black text-blue-900 text-lg">思考レイヤー</h3>
+                        <div class="data-text mt-2 text-blue-800">
+                            <div><span class="label-tag">いつ</span>案件開始時、要件が曖昧な段階</div>
+                            <div><span class="label-tag">何を</span>戦略整理、要件定義、意思決定</div>
+                            <div><span class="label-tag">目的</span>何を作るかと優先順位を明確にする</div>
+                            <div><span class="label-tag">結果</span>構造設計に進める状態になる</div>
+                            <div><span class="label-tag">ツール</span>ChatGPT / Gemini</div>
+                        </div>
                     </div>
-                    <span class="text-2xl opacity-80">${layer.icon}</span>
-                `;
-                btn.onclick = () => selectLayer(layerId);
-                stackContainer.appendChild(btn);
-            });
+                    <div class="flex gap-4 flex-grow w-full items-center">
+                        <div class="bg-white border border-blue-200 px-4 py-6 flex-1 shadow-sm text-center font-black text-slate-800 text-lg">ChatGPT / Gemini</div>
+                    </div>
+                </div>
+            </div>
 
-            initChart();
-            selectLayer('brain');
-        }
+            <div class="connector-line"></div>
 
-        function selectLayer(layerId) {
-            document.querySelectorAll('.layer-btn').forEach(btn => {
-                btn.classList.remove('layer-active', 'warehouse-active', 'border-blue-500', 'border-orange-500', 'border-green-500', 'border-purple-500', 'border-amber-500', 'border-pink-500', 'border-stone-700');
-                
-                const originalColor = layersData[btn.id.replace('btn-', '')].color;
-                if(btn.id !== 'btn-warehouse') {
-                    btn.classList.add(`border-${originalColor}-300`);
-                }
-            });
+            <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-sm">
+                <div class="flex flex-col md:flex-row justify-between items-start gap-6">
+                    <div class="w-64 flex-shrink-0">
+                        <h3 class="font-black text-indigo-900 text-lg">構造レイヤー</h3>
+                        <div class="data-text mt-2 text-indigo-800">
+                            <div><span class="label-tag">いつ</span>方針決定後、実装前</div>
+                            <div><span class="label-tag">何を</span>情報設計、ディレクトリ設計、タスク整理</div>
+                            <div><span class="label-tag">目的</span>プロジェクトの構造と前提を固定する</div>
+                            <div><span class="label-tag">結果</span>迷いなく生成・実装に入れる</div>
+                            <div><span class="label-tag">ツール</span>Windsurf</div>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 flex-grow w-full items-center">
+                        <div class="bg-white border border-indigo-200 px-4 py-6 flex-1 shadow-sm text-center font-black text-slate-800 text-lg">Windsurf</div>
+                    </div>
+                </div>
+            </div>
 
-            const btn = document.getElementById(`btn-${layerId}`);
-            if (layerId === 'warehouse') {
-                btn.classList.add('warehouse-active');
+            <div class="connector-line"></div>
+
+            <div class="bg-cyan-50 border border-cyan-200 p-4 rounded-sm">
+                <div class="flex flex-col md:flex-row justify-between items-start gap-6">
+                    <div class="w-64 flex-shrink-0">
+                        <h3 class="font-black text-cyan-900 text-lg">UI生成レイヤー</h3>
+                        <div class="data-text mt-2 text-cyan-800">
+                            <div><span class="label-tag">いつ</span>構造確定後、実装前</div>
+                            <div><span class="label-tag">何を</span>画面構成、UIレイアウト、初期デザイン生成</div>
+                            <div><span class="label-tag">目的</span>手作業のUI設計を削減する</div>
+                            <div><span class="label-tag">結果</span>実装に渡せるUIの叩き台ができる</div>
+                            <div><span class="label-tag">ツール</span>Stitch / v0</div>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 flex-grow w-full items-center">
+                        <div class="bg-white border border-cyan-200 px-4 py-6 flex-1 shadow-sm text-center font-black text-slate-800 text-lg">Stitch / v0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="connector-line"></div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-sm">
+                    <h3 class="font-black text-emerald-900 text-lg">CLI実行レイヤー</h3>
+                    <div class="data-text mt-2 text-emerald-800 mb-4">
+                        <div><span class="label-tag">いつ</span>UIと構造が揃った後</div>
+                        <div><span class="label-tag">何を</span>コード生成、実装、複数ファイル編集、テスト</div>
+                        <div><span class="label-tag">目的</span>設計を実際に動く形にする</div>
+                        <div><span class="label-tag">結果</span>動作確認できるプロダクトになる</div>
+                        <div><span class="label-tag">ツール</span>Claude Code / Gemini CLI / Codex</div>
+                    </div>
+                    <div class="bg-white border border-emerald-200 px-3 py-3 text-sm font-black shadow-sm text-center">Claude Code / Gemini CLI / Codex</div>
+                </div>
+                <div class="bg-teal-50 border border-teal-200 p-4 rounded-sm">
+                    <h3 class="font-black text-teal-900 text-lg">ローカル処理レイヤー</h3>
+                    <div class="data-text mt-2 text-teal-800 mb-4">
+                        <div><span class="label-tag">いつ</span>実装前後や補助処理が必要なとき</div>
+                        <div><span class="label-tag">何を</span>データ処理、変換、バッチ処理、ファイル整理</div>
+                        <div><span class="label-tag">目的</span>手作業や重い処理を自動化する</div>
+                        <div><span class="label-tag">結果</span>作業効率が上がり本作業に集中できる</div>
+                        <div><span class="label-tag">ツール</span>Python / Open Interpreter</div>
+                    </div>
+                    <div class="bg-white border border-teal-200 px-3 py-3 text-sm font-black shadow-sm text-center">Python / Open Interpreter</div>
+                </div>
+            </div>
+
+            <div class="connector-line"></div>
+
+            <div class="bg-slate-50 border-2 border-slate-300 optional-layer p-4 rounded-sm">
+                <div class="flex flex-col md:flex-row justify-between items-start gap-6">
+                    <div class="w-64 flex-shrink-0">
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-black text-slate-900 text-lg">操作レイヤー</h3>
+                            <span class="bg-slate-200 text-slate-600 text-[8px] px-2 py-0.5 font-black rounded-full uppercase">Optional</span>
+                        </div>
+                        <div class="data-text mt-2 text-slate-600">
+                            <div><span class="label-tag">いつ</span>ブラウザやアプリ操作を自動化したいとき</div>
+                            <div><span class="label-tag">何を</span>クリック、入力、画面操作の代行</div>
+                            <div><span class="label-tag">目的</span>単純作業を減らす</div>
+                            <div><span class="label-tag">結果</span>依存しない設計を維持しつつ手数を削減する</div>
+                            <div><span class="label-tag">ツール</span>Claude Cowork</div>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 flex-grow w-full items-center">
+                        <div class="bg-white border border-slate-200 px-4 py-4 flex-1 shadow-sm text-center font-black text-slate-400 italic">Claude Cowork</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="connector-line"></div>
+
+            <div class="bg-rose-50 border border-rose-200 p-4 rounded-sm">
+                <div class="mb-4">
+                    <h3 class="font-black text-rose-900 text-lg">人間確認レイヤー</h3>
+                    <div class="data-text mt-2 text-rose-800">
+                        <div><span class="label-tag">いつ</span>公開前、納品前</div>
+                        <div><span class="label-tag">何を</span>品質確認、微調整、書き出し確認、コード確認</div>
+                        <div><span class="label-tag">目的</span>AI出力の品質を担保する</div>
+                        <div><span class="label-tag">結果</span>そのまま公開・納品できる状態になる</div>
+                        <div><span class="label-tag">ツール</span>Photoshop / Illustrator / InDesign / Visual Studio Code</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                    <div class="bg-white border border-rose-200 p-3 shadow-sm text-center">
+                        <div class="font-black text-blue-900 text-xl mb-1">Ps</div>
+                        <div class="text-[10px] font-bold text-slate-400">Photoshop</div>
+                    </div>
+                    <div class="bg-white border border-rose-200 p-3 shadow-sm text-center">
+                        <div class="font-black text-orange-900 text-xl mb-1">Ai</div>
+                        <div class="text-[10px] font-bold text-slate-400">Illustrator</div>
+                    </div>
+                    <div class="bg-white border border-rose-200 p-3 shadow-sm text-center">
+                        <div class="font-black text-pink-900 text-xl mb-1">Id</div>
+                        <div class="text-[10px] font-bold text-slate-400">InDesign</div>
+                    </div>
+                    <div class="bg-white border border-rose-200 p-3 shadow-sm text-center border-2 border-rose-300">
+                        <div class="font-black text-blue-600 text-xl mb-1">VS</div>
+                        <div class="text-[10px] font-bold text-slate-400 text-xs">Visual Studio Code</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="connector-line h-12"></div>
+
+            <div class="bg-slate-900 p-6 rounded-sm border-t-8 border-indigo-500">
+                <div class="flex flex-col md:flex-row justify-between items-start gap-6">
+                    <div class="text-left flex-grow">
+                        <h2 class="text-2xl font-black text-white flex items-center gap-3">
+                            <span class="text-indigo-400">☁️</span> Google Drive Desktop / Google Drive
+                        </h2>
+                        <div class="data-text mt-3 text-slate-300">
+                            <div><span class="label-tag" style="color: #818CF8;">いつ</span>全工程を通して常時</div>
+                            <div><span class="label-tag" style="color: #818CF8;">何を</span>各端末で Agent_Workspace を同期し、作業データを一元管理する</div>
+                            <div><span class="label-tag" style="color: #818CF8;">目的</span>ローカルとクラウドを分断せず、全レイヤーの起点を1つに固定する</div>
+                            <div><span class="label-tag" style="color: #818CF8;">結果</span>全AIと人間が同じ最新版を参照でき、文脈ズレとファイル迷子を防ぐ</div>
+                            <div><span class="label-tag" style="color: #818CF8;">ツール</span>Google Drive Desktop / Google Drive</div>
+                        </div>
+                        
+                        <div class="mt-6 p-4 bg-slate-800 rounded-sm border border-slate-700">
+                            <h4 class="text-indigo-400 text-[10px] font-black uppercase tracking-widest mb-3">Agent_Workspace 物理ディレクトリ構造</h4>
+                            <div class="flex flex-wrap gap-2 text-[11px] font-mono font-bold">
+                                <span class="bg-slate-900 px-3 py-1 text-slate-300 border border-slate-600">/inbox</span>
+                                <span class="text-slate-600 py-1">→</span>
+                                <span class="bg-slate-900 px-3 py-1 text-slate-300 border border-slate-600">/draft</span>
+                                <span class="text-slate-600 py-1">→</span>
+                                <span class="bg-slate-900 px-3 py-1 text-slate-300 border border-slate-600">/review</span>
+                                <span class="text-slate-600 py-1">→</span>
+                                <span class="bg-slate-900 px-3 py-1 text-slate-300 border border-slate-600">/final</span>
+                                <span class="text-slate-600 py-1">|</span>
+                                <span class="bg-slate-900 px-3 py-1 text-slate-500 border border-slate-700">/archive</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2 h-max mt-4 md:mt-0 md:min-w-[180px]">
+                        <h4 class="text-indigo-400 text-[10px] font-black uppercase tracking-widest">コア管理ファイル</h4>
+                        <div class="bg-slate-800 px-3 py-1 border border-slate-700 text-indigo-300 text-[11px] font-mono font-bold">AGENT_CONTEXT.md</div>
+                        <div class="bg-slate-800 px-3 py-1 border border-slate-700 text-indigo-300 text-[11px] font-mono font-bold">TASK_QUEUE.md</div>
+                        <div class="bg-slate-800 px-3 py-1 border border-slate-700 text-indigo-300 text-[11px] font-mono font-bold">RULES.md</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12 pt-12 border-t border-slate-100">
+            <div>
+                <h4 class="font-black text-slate-800 mb-4 flex items-center gap-2">
+                    <span class="w-1 h-4 bg-indigo-600"></span> AI運用による期待削減工数比率
+                </h4>
+                <div class="chart-container">
+                    <canvas id="efficiencyChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-slate-50 p-6 border border-slate-200 rounded-sm">
+                <h4 class="font-black text-slate-800 mb-4">実務運用サマリー</h4>
+                <ul class="space-y-4">
+                    <li class="flex gap-4">
+                        <span class="bg-slate-900 text-white w-6 h-6 flex-shrink-0 flex items-center justify-center text-[10px] font-black">01</span>
+                        <div>
+                            <p class="text-xs font-black">SSOT（唯一の真実）の物理同期</p>
+                            <p class="text-[10px] text-slate-500">Google Drive Desktop による同期された Agent_Workspace を全エージェントの始点とする。データの私蔵はシステム崩壊の起点となる。</p>
+                        </div>
+                    </li>
+                    <li class="flex gap-4">
+                        <span class="bg-slate-900 text-white w-6 h-6 flex-shrink-0 flex items-center justify-center text-[10px] font-black">02</span>
+                        <div>
+                            <p class="text-xs font-black">レイヤー間の同期タイミング</p>
+                            <p class="text-[10px] text-slate-500">各レイヤーの「結果」が次レイヤーの「いつ」のトリガー。この連鎖が滞りなく流れるパイプラインを維持せよ。</p>
+                        </div>
+                    </li>
+                    <li class="flex gap-4">
+                        <span class="bg-slate-900 text-white w-6 h-6 flex-shrink-0 flex items-center justify-center text-[10px] font-black">03</span>
+                        <div>
+                            <p class="text-xs font-black">人間による品質審議</p>
+                            <p class="text-[10px] text-slate-500">AIは「作業」を、人間は「品格」を。Photoshop等はクリエイティブの最終ゲートであり、ここを省略してはならない。</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-slate-50 p-6 border-t border-slate-100 flex justify-between items-center text-[10px] font-bold text-slate-400">
+        <div>AI STACK ARCHITECTURE MAP v3.5 | MINIMAL ACTION EDITION</div>
+        <div class="flex gap-4">
+            <span>NO SVG GRAPHICS</span>
+            <span>NO MERMAID JS</span>
+            <span>PURE CANVAS RENDERED</span>
+        </div>
+    </footer>
+</div>
+
+<script>
+    function appendStatus(logContainer, text) {
+        const row = document.createElement('div');
+        row.textContent = text;
+        logContainer.appendChild(row);
+    }
+
+    function startProject() {
+        const bar = document.getElementById('projectStatusBar');
+        const log = document.getElementById('projectStatusLog');
+
+        bar.classList.remove('hidden');
+        log.innerHTML = '';
+
+        appendStatus(log, '▶ Trigger: 新規プロジェクト開始');
+        appendStatus(log, '1. Google Drive Desktop 上の Agent_Workspace を起点として確認');
+        appendStatus(log, '2. /inbox に初期要件を投入');
+        appendStatus(log, '3. TASK_QUEUE.md を新規案件用に更新');
+        appendStatus(log, '4. 構造レイヤーへ引き渡し');
+    }
+
+    function wrapLabel(text, limit = 16) {
+        if (text.length <= limit) return text;
+        const words = text.split('');
+        const lines = [];
+        let currentLine = '';
+        words.forEach(char => {
+            if ((currentLine + char).length > limit) {
+                lines.push(currentLine);
+                currentLine = char;
             } else {
-                const color = layersData[layerId].color;
-                btn.classList.remove(`border-${color}-300`);
-                btn.classList.add('layer-active', `border-${color}-500`, `bg-${color}-50`);
+                currentLine += char;
             }
+        });
+        if (currentLine) lines.push(currentLine);
+        return lines;
+    }
 
-            const data = layersData[layerId];
-            
-            document.getElementById('detail-title').textContent = data.title;
-            
-            const badge = document.getElementById('detail-badge');
-            badge.textContent = data.badge;
-            badge.className = `px-3 py-1 rounded-full text-sm font-bold bg-${data.color}-100 text-${data.color}-700`;
-            if(data.color === 'stone') badge.className = `px-3 py-1 rounded-full text-sm font-bold bg-stone-200 text-stone-800`;
-
-            document.getElementById('detail-tools').innerHTML = data.tools;
-            document.getElementById('detail-role').innerHTML = data.role;
-            
-            const rulesContainer = document.getElementById('detail-rules');
-            rulesContainer.innerHTML = '';
-            data.rules.forEach(rule => {
-                const li = document.createElement('li');
-                li.className = 'flex items-start';
-                li.innerHTML = `<span class="text-${data.color}-500 mr-2 font-bold">・</span><span>${rule}</span>`;
-                if(data.color === 'stone') li.innerHTML = `<span class="text-stone-700 mr-2 font-bold">・</span><span>${rule}</span>`;
-                rulesContainer.appendChild(li);
-            });
-
-            updateChart(data.chartData, data.color);
+    const commonTooltipConfig = {
+        callbacks: {
+            title: function(tooltipItems) {
+                const item = tooltipItems[0];
+                let label = item.chart.data.labels[item.dataIndex];
+                return Array.isArray(label) ? label.join('') : label;
+            }
         }
+    };
 
-        const colorMap = {
-            'blue': 'rgba(59, 130, 246, 0.6)',
-            'orange': 'rgba(249, 115, 22, 0.6)',
-            'green': 'rgba(34, 197, 94, 0.6)',
-            'purple': 'rgba(168, 85, 247, 0.6)',
-            'amber': 'rgba(245, 158, 11, 0.6)',
-            'pink': 'rgba(236, 72, 153, 0.6)',
-            'stone': 'rgba(120, 113, 108, 0.6)'
-        };
-
-        const borderMap = {
-            'blue': 'rgb(59, 130, 246)',
-            'orange': 'rgb(249, 115, 22)',
-            'green': 'rgb(34, 197, 94)',
-            'purple': 'rgb(168, 85, 247)',
-            'amber': 'rgb(245, 158, 11)',
-            'pink': 'rgb(236, 72, 153)',
-            'stone': 'rgb(120, 113, 108)'
-        };
-
-        function initChart() {
-            const ctx = document.getElementById('layerChart').getContext('2d');
-            chartInstance = new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: ['自動化・自律性', '抽象的思考・創造性', '人間的文脈の理解', '処理速度・反復性'],
-                    datasets: [{
-                        label: '能力プロファイル',
-                        data: [0, 0, 0, 0],
-                        backgroundColor: 'rgba(120, 113, 108, 0.2)',
-                        borderColor: 'rgb(120, 113, 108)',
-                        pointBackgroundColor: 'rgb(120, 113, 108)',
-                        borderWidth: 2,
-                        pointRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        r: {
-                            angleLines: { color: 'rgba(0,0,0,0.05)' },
-                            grid: { color: 'rgba(0,0,0,0.05)' },
-                            pointLabels: {
-                                font: { family: "'Noto Sans JP', sans-serif", size: 11, weight: 'bold' },
-                                color: '#57534e'
-                            },
-                            ticks: { display: false, min: 0, max: 100 }
-                        }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: 'rgba(28, 25, 23, 0.9)',
-                            titleFont: { family: "'Noto Sans JP', sans-serif", size: 13 },
-                            bodyFont: { family: "'Noto Sans JP', sans-serif", size: 12 },
-                            padding: 10,
-                            cornerRadius: 8
-                        }
-                    }
-                }
-            });
+    const effCtx = document.getElementById('efficiencyChart').getContext('2d');
+    new Chart(effCtx, {
+        type: 'bar',
+        data: {
+            labels: [
+                wrapLabel('思考・設計'),
+                wrapLabel('UI生成・プロト'),
+                wrapLabel('実装・デバッグ'),
+                wrapLabel('データ補助処理'),
+                wrapLabel('品質確認・微調整')
+            ],
+            datasets: [{
+                label: '期待削減率 (%)',
+                data: [75, 90, 85, 95, 40],
+                backgroundColor: '#4F46E5',
+                borderRadius: 2
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, max: 100, ticks: { font: { size: 10 } } },
+                x: { ticks: { font: { size: 10 } } }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: commonTooltipConfig
+            }
         }
-
-        function updateChart(dataArray, colorKey) {
-            if (!chartInstance) return;
-            chartInstance.data.datasets[0].data = dataArray;
-            chartInstance.data.datasets[0].backgroundColor = colorMap[colorKey] || colorMap['stone'];
-            chartInstance.data.datasets[0].borderColor = borderMap[colorKey] || borderMap['stone'];
-            chartInstance.data.datasets[0].pointBackgroundColor = borderMap[colorKey] || borderMap['stone'];
-            chartInstance.update();
-        }
-
-        document.addEventListener('DOMContentLoaded', initApp);
-    </script>
+    });
+</script>
 </body>
 </html>
